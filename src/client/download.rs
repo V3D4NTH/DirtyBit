@@ -50,10 +50,13 @@ impl Stream {
         self.read_code(Code::Bitfield).await?;
         self.write_code(Code::Interested).await?;
         self.read_code(Code::Unchoke).await?;
+
         let mut buffer = BytesMut::new();
         for r in fetch.parts {
             let piece = self.fetch(r).await?;
+            buffer.put(piece.data);
         }
+
         let hash = Hash::encode(&buffer)?;
         ensure!(
             hash == fetch.hash,
@@ -61,6 +64,7 @@ impl Stream {
             fetch.hash,
             hash
         );
+
         Ok(buffer.freeze())
     }
 }

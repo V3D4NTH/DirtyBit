@@ -1,5 +1,4 @@
 use crate::hash::Hash;
-use anyhow::Result;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 

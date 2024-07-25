@@ -17,7 +17,6 @@ impl PartialEq<i64> for Ben {
         }
     }
 }
-
 impl PartialEq<&str> for Ben {
     fn eq(&self, other: &&str) -> bool {
         match self {
@@ -29,6 +28,7 @@ impl PartialEq<&str> for Ben {
 
 impl From<&Ben> for serde_json::Value {
     fn from(value: &Ben) -> Self {
+        use serde_json::Value;
         match value {
             Ben::String(s) => Value::String(s.clone()),
             Ben::Number(i) => Value::from(*i),
@@ -46,14 +46,12 @@ impl From<&Ben> for serde_json::Value {
         }
     }
 }
-
 impl Display for Ben {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let value = serde_json::Value::from(self);
         write!(f, "{value}")
     }
 }
-
 impl FromStr for Ben {
     type Err = anyhow::Error;
     fn from_str(s: &str) -> Result<Self> {
@@ -113,6 +111,7 @@ impl Ben {
         let ben = Self::Map(map);
         Ok((input, ben))
     }
+
     fn decode(input: &str) -> Result<(&str, Ben)> {
         match input.chars().next().context("Input is empty")? {
             c if c.is_ascii_digit() => Self::decode_string(input),
@@ -123,31 +122,28 @@ impl Ben {
         }
     }
 }
-
 #[cfg(test)]
 mod test {
     use super::*;
-
     #[test]
     fn test_string() {
         let b: Ben = "9:hernan.rs".parse().unwrap();
         assert_eq!(b, "hernan.rs");
-        assert_eq!(b.to_string(), r#"hernan.rs\""#);
+        assert_eq!(b.to_string(), r#""hernan.rs""#);
     }
 
     #[test]
     fn test_integer() {
         let b: Ben = "i42e".parse().unwrap();
         assert_eq!(b, 42);
-
         let b: Ben = "i-42e".parse().unwrap();
         assert_eq!(b, -42);
     }
-
     #[test]
     fn test_list() {
         let b: Ben = "l5:helloi52ee".parse().unwrap();
         assert_eq!(b.to_string(), r#"["hello",52]"#);
+
         let b: Ben = "lli4eei5ee".parse().unwrap();
         assert_eq!(b.to_string(), "[[4],5]");
     }

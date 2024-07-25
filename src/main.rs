@@ -1,7 +1,6 @@
 mod args;
 mod ben;
 mod torrent;
-mod decode;
 mod client;
 mod hash;
 use anyhow::Result;

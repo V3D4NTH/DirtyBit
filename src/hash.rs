@@ -35,7 +35,6 @@ impl<'input> Hash {
     }
 
     pub fn encode(chunk: impl AsRef<[u8]>) -> Result<Self> {
-    let chunk = serde_bencode::to_bytes(t)?;
         let mut hasher = Sha1::new();
         hasher.update(chunk);
         let hash = Self(hasher.finalize().into());

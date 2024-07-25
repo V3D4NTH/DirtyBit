@@ -1,11 +1,13 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
+use crate::client::Peer;
 
 #[derive(Subcommand)]
 pub enum Command {
     Decode { input: String },
     Info { path: PathBuf },
     Peers { path: PathBuf },
+    Handshake { path: PathBuf, peer: Peer },
 }
 
 #[derive(Parser)]

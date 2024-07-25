@@ -1,6 +1,8 @@
 mod args;
 mod ben;
 mod torrent;
+use client::Client;
+use client::Peer;
 mod client;
 mod hash;
 use anyhow::Result;
@@ -9,8 +11,8 @@ use ben::Ben;
 use std::path::Path;
 use torrent::Torrent;
 
-// Usage: your_bittorrent.sh decode "<encoded_value>"
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let args = args::parse();
     let Some(cmd) = args.command else {
         anyhow::bail!("No command found.");
@@ -20,13 +22,15 @@ fn main() -> Result<()> {
         Command::Decode { input } => handle_decode(input),
         Command::Info { path } => handle_info(&path),
         Command::Peers { path } => handle_peers(&path),
+        Command::Handshake { path, peer } => handle_handshake(&path, peer).await,
     }
 }
 
 fn handle_peers(p: &Path) -> Result<()> {
     let t = Torrent::open(p)?;
-    for peer in client::resolve_peers(&t)? {
-        println!("{peer}")
+    let client = Client;
+    for peer in client.discover(&t)? {
+    println!("{peer}")
     }
     Ok(())
 }
@@ -47,5 +51,13 @@ fn handle_info(p: &Path) -> Result<()> {
     for digest in t.info.pieces().map(|p| p.digest()) {
         println!("{digest}")
     }
+    Ok(())
+}
+
+async fn handle_handshake(path: &Path, peer: Peer) -> Result<()> {
+    let t = Torrent::open(path)?;
+    let client = Client;
+    let id = client.handshake(peer, &t).await?;
+    println!("Peer ID: {id}");
     Ok(())
 }

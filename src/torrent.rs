@@ -1,42 +1,49 @@
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
+mod info;
+use info::Info;
+use reqwest::Url;
+use serde::{Deserialize, Deserializer};
 use std::path::Path;
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
-pub struct Info {
-    pub length: usize,
-    pub name: String,
-    #[serde(rename = "piece length")]
-    pub piece_length: usize,
-    #[serde(with = "serde_bytes")]
-    pieces: Vec<u8>,
-}
-
-impl Info {
-    pub fn digest(&self) -> Result<String> {
-        use sha1::{Digest, Sha1};
-
-        let chunk = serde_bencode::to_bytes(self)?;
-        let mut hasher = Sha1::new();
-        hasher.update(chunk);
-        let hash = hasher.finalize();
-        let hex = hex::encode(hash);
-        Ok(hex)
-    }
-}
 
 #[derive(Deserialize, PartialEq, Eq, Debug)]
 pub struct Torrent {
-    pub announce: String,
-    #[serde(rename = "created by")]
-    pub created_by: String,
+    #[serde(with = "url")]
+    pub announce: Url,
     pub info: Info,
 }
 
 impl Torrent {
-    pub fn open(path: &Path) -> Result<Self> {
+    pub fn open<P: AsRef<Path>>(path: P) -> Result<Self> {
         let data = std::fs::read(path)?;
         let t: Torrent = serde_bencode::from_bytes(&data)?;
         Ok(t)
+    }
+}
+
+mod url {
+    use super::*;
+
+    pub fn deserialize<'de, D>(deserializer: D) -> std::result::Result<Url, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let uri: Url = s.parse().map_err(serde::de::Error::custom)?;
+        Ok(uri)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_open() {
+        let t = Torrent::open("sample.torrent").unwrap();
+        assert_eq!(
+            t.announce.to_string(),
+            "http://bittorrent-test-tracker.codecrafters.io/announce"
+        )
     }
 }
